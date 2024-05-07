@@ -76,8 +76,8 @@ const gaugeCharts = [
 
 // History Data
 var temperatureTrace = {
-  x: [],
-  y: [],
+  x: [41,20,25,30],
+  y: [10,20,25,30],
   name: "Temperature",
   mode: "lines+markers",
   type: "line",
@@ -338,22 +338,36 @@ let newPressureYArray = [];
 // Altitude
 let newAltitudeXArray = [];
 let newAltitudeYArray = [];
-
+let sensorValueObj = {
+    temperature:[],
+    humidity:[],
+    pressure:[],
+    altitude:[]
+  }
 // The maximum number of data points displayed on our scatter/line graph
 let MAX_GRAPH_POINTS = 12;
 let ctr = 0;
 
 // Callback function that will retrieve our latest sensor readings and redraw our Gauge with the latest readings
-function updateSensorReadings(jsonResponse) {
-  console.log(typeof jsonResponse);
-  console.log(jsonResponse);
+function updateSensorReadings(stringMsg) {
+  let stringVals = stringMsg.split(" ");
+  for (let i = 0; i < stringVals.length; i++) {
+    let newObjArr = stringVals[i].split('=')
+    if(newObjArr[0]==='Temperature') {
+      sensorValueObj.temperature.push(newObjArr[1]) 
+      console.log("Temperatures Values : ", sensorValueObj.temperature)
+    }
+    else if (newObjArr[0]==='Humidity') {
+      sensorValueObj.humidity.push(newObjArr[1])
+      console.log( "Humidity VAlues : ",sensorValueObj.humidity)
+    }
+  }
+  // let temperature = Number(jsonResponse.temperature).toFixed(2);
+  // let humidity = Number(jsonResponse.humidity).toFixed(2);
+  // let pressure = Number(jsonResponse.pressure).toFixed(2);
+  // let altitude = Number(jsonResponse.altitude).toFixed(2);
 
-  let temperature = Number(jsonResponse.temperature).toFixed(2);
-  let humidity = Number(jsonResponse.humidity).toFixed(2);
-  let pressure = Number(jsonResponse.pressure).toFixed(2);
-  let altitude = Number(jsonResponse.altitude).toFixed(2);
-
-  updateBoxes(temperature, humidity, pressure, altitude);
+  updateBoxes(sensorValueObj.temperature, sensorValueObj.humidity, sensorValueObj.pressure, sensorValueObj.altitude);
 
   updateGauge(temperature, humidity, pressure, altitude);
 
@@ -394,10 +408,11 @@ function updateBoxes(temperature, humidity, pressure, altitude) {
   let pressureDiv = document.getElementById("pressure");
   let altitudeDiv = document.getElementById("altitude");
 
-  temperatureDiv.innerHTML = temperature + " C";
-  humidityDiv.innerHTML = humidity + " %";
-  pressureDiv.innerHTML = pressure + " hPa";
-  altitudeDiv.innerHTML = altitude + " m";
+//temperatureDiv.innerHTML = temperature[temperature.length-1] + " C";
+  temperatureDiv.innerHTML =temperature.length===0? 0 +" C":temperature[temperature.length-1];
+  humidityDiv.innerHTML = humidity.length===0? 0 +" %":humidity[humidity.length-1];
+  pressureDiv.innerHTML = pressure.length===0?0 +" hPa":pressure[pressure.length-1];
+  altitudeDiv.innerHTML = altitude.length===0?0 +" m":altitude[altitude.length-1];
 }
 
 function updateGauge(temperature, humidity, pressure, altitude) {
@@ -512,8 +527,9 @@ function onConnect(message) {
 }
 function onMessage(topic, message) {
   var stringResponse = message.toString();
-  var messageResponse = JSON.parse(stringResponse);
-  updateSensorReadings(messageResponse);
+  console.log(stringResponse)
+  //var messageResponse = JSON.parse(stringResponse);
+  updateSensorReadings(stringResponse);
 }
 
 function onError(error) {
@@ -534,6 +550,7 @@ function fetchMQTTConnection() {
     },
   })
     .then(function (response) {
+      console.log(response)
       return response.json();
     })
     .then(function (data) {
@@ -542,13 +559,15 @@ function fetchMQTTConnection() {
     .catch((error) => console.error("Error getting MQTT Connection :", error));
 }
 function initializeMQTTConnection(mqttServer, mqttTopic) {
-  console.log(
-    `Initializing connection to :: ${mqttServer}, topic :: ${mqttTopic}`
-  );
-  var fnCallbacks = { onConnect, onMessage, onError, onClose };
+ console.log(
+   `Initializing connection to :: ${mqttServer}, topic :: ${mqttTopic}`
+ );
+ var fnCallbacks = { onConnect, onMessage, onError, onClose };
 
-  var mqttService = new MQTTService(mqttServer, fnCallbacks);
-  mqttService.connect();
 
-  mqttService.subscribe(mqttTopic);
+ var mqttService = new MQTTService(mqttServer, fnCallbacks);
+ mqttService.connect();
+ 
+ mqttService.subscribe(mqttTopic);
+ 
 }

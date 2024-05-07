@@ -16,7 +16,7 @@ const dashboardRouter = require("./routes/dashboard");
 
 app.get("/mqttConnDetails", (req, res) => {
   res.send(
-    JSON.stringify({
+    JSON.stringify({      
       mqttServer: process.env.MQTT_BROKER,
       mqttTopic: process.env.MQTT_TOPIC,
     })
@@ -26,5 +26,5 @@ app.get("/mqttConnDetails", (req, res) => {
 app.get("/", dashboardRouter);
 
 app.listen(port, () => {
-  console.log(`Example app listening on port ${port}`);
+  console.log(`this mqtt server app listening on port ${port}`);
 });
